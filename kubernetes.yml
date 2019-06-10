@@ -33,50 +33,43 @@ spec:
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  labels:
-    run: postgres
   name: postgres
-  namespace: default
 spec:
   replicas: 1
-  selector:
-    matchLabels:
-      run: postgres
   template:
     metadata:
       labels:
-        run: postgres
+        app: postgres
     spec:
       containers:
-      - env:
-        - name: POSTGRES_PASSWORD
-          value: sonar
-        - name: POSTGRES_USER
-          value: sonar
-        - name: POSTGRES_DB
-          value: sonar
-        image: postgres
-        imagePullPolicy: Always
-        name: postgres
-        ports:
-        - containerPort: 5432
-          protocol: TCP
+        - name: postgres
+          image: postgres
+          imagePullPolicy: "IfNotPresent"
+          ports:
+            - containerPort: 5432
+          envFrom:
+            - configMapRef:
+                name: postgres-cm
+          volumeMounts:
+            - mountPath: /var/lib/postgresql/data
+              name: postgredb
+      volumes:
+        - name: postgredb
+          persistentVolumeClaim:
+            claimName: postgres-pvc
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  labels:
-    run: postgres
   name: postgres
-  namespace: default
+  labels:
+    app: postgres
 spec:
-  ports:
-  - port: 5432
-    protocol: TCP
-    targetPort: 5432
-  selector:
-    run: postgres
   type: ClusterIP
+  ports:
+   - port: 5432
+  selector:
+   app: postgres
 ---
 apiVersion: v1
 kind: Service
